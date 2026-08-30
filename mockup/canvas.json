@@ -1,0 +1,11 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1600, "h": 1000, "title": "Desktop — bar" },
+    { "file": "Launcher.dc.html", "x": 1680, "y": 0, "w": 1600, "h": 1000, "title": "Launcher" },
+    { "file": "ControlCenter.dc.html", "x": 0, "y": 1120, "w": 1600, "h": 1000, "title": "Control center" },
+    { "file": "LockScreen.dc.html", "x": 1680, "y": 1120, "w": 1600, "h": 1000, "title": "Lock screen" },
+    { "file": "Notifications.dc.html", "x": 0, "y": 2240, "w": 480, "h": 760, "title": "Notifications" },
+    { "file": "OSD.dc.html", "x": 560, "y": 2240, "w": 560, "h": 200, "title": "OSD" }
+  ],
+  "launch": { "view": "canvas" }
+}

@@ -1,0 +1,5 @@
+# Generated design-canvas payload (~2.5MB, bundles the editor itself).
+# The real source is the .dc.html files + canvas.json next to it.
+mockup/hyprshell-minimal-rice.html
+
+.DS_Store
