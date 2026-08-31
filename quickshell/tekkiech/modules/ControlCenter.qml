@@ -187,7 +187,7 @@ PanelWindow {
                         anchors.centerIn: parent
                         text: label
                         font.family: theme.fontMono
-                        font.pixelSize: 10.5
+                        font.pixelSize: 10
                         color: on ? "#151515" : theme.textDim
                     }
 

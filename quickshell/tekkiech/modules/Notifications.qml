@@ -127,7 +127,7 @@ PanelWindow {
                             visible: modelData.n.body !== ""
                             text: modelData.n.body
                             font.family: theme.fontSans
-                            font.pixelSize: 12.5
+                            font.pixelSize: 13
                             color: theme.textDim
                             wrapMode: Text.WordWrap
                             maximumLineCount: 2
