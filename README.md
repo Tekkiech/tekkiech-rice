@@ -11,20 +11,26 @@ from lives in [`/mockup`](./mockup) (also published as a
 
 ## Status
 
-**First pass: bar + launcher only.** Control center, notifications, OSD,
-and lock screen from the mockup aren't built yet — those come next once
-this pass is confirmed working. See "What's stubbed" below for what's
-faked in the bar for now.
+**All six mockup surfaces are built**: bar, launcher, control center,
+notifications, OSD, and lock screen. See "What's stubbed" below for the
+handful of things that are still cosmetic placeholders rather than fully
+matching the mockup.
 
 ## What's here
 
 ```
 hypr/hyprland.conf              Hyprland config (bar exec, blur, keybinds)
 quickshell/tekkiech/
-  shell.qml                     entry point
-  modules/Bar.qml                top bar: workspaces, active window title, clock, battery, power
-  modules/Launcher.qml           app launcher overlay (SUPER+R)
-  modules/common/Theme.qml       color/font tokens ported from the mockup
+  shell.qml                     entry point — instantiates all six modules
+  pam/password.conf              PAM config for the lock screen
+  modules/Bar.qml                 top bar: workspaces, window title, clock, battery, wifi/bt/mic, power
+  modules/Launcher.qml            app launcher overlay (SUPER+R)
+  modules/ControlCenter.qml       quick settings (SUPER+C): toggles, volume/brightness, media, power row
+  modules/Notifications.qml       top-right toast stack
+  modules/OSD.qml                 volume/brightness popup
+  modules/LockScreen.qml          lock screen (SUPER+L) — real PAM auth
+  modules/LockContext.qml         PAM wiring, adapted from Quickshell's official example
+  modules/common/Theme.qml        color/font tokens ported from the mockup
 install.sh                      package install + config symlinks
 mockup/                          the original design canvas (.dc.html source)
 ```
@@ -80,10 +86,23 @@ Hyprland
 ```
 
 You should see: a black screen, a 40px bar at the top (workspace `1`,
-clock in the middle, battery % and a power glyph on the right). `SUPER
-+Return` opens `foot`. `SUPER+R` toggles the launcher — type to filter,
-`Enter` launches the top result, `Esc` or click outside closes it.
-`SUPER+SHIFT+Q` exits Hyprland back to the TTY.
+clock in the middle, battery % and a power glyph on the right).
+
+- `SUPER+Return` — open `foot`
+- `SUPER+R` — toggle the launcher (type to filter, `Enter` launches the
+  top result, `Esc` or click outside closes it)
+- `SUPER+C` — toggle the control center
+- `SUPER+L` — lock the screen (real password auth via PAM — it'll check
+  your actual login password; `Esc` does *not* bypass it, that's the
+  point)
+- volume/brightness media keys — show the OSD popup
+- `SUPER+SHIFT+Q` — exit Hyprland back to the TTY
+
+**Careful with `SUPER+L`** the first time: if the PAM wiring has a bug,
+you could end up locked out with no way back in except a fresh
+`Hyprland` process from another TTY (`Ctrl+Alt+F2` etc.) to kill the
+stuck one, or a VM console reset. Worth trying it once deliberately
+rather than fat-fingering it.
 
 ### Taking a screenshot
 
@@ -98,24 +117,28 @@ blur, and fonts are landing the way the mockup intended.
 
 ## What's stubbed (for now)
 
-The bar's workspace list, active window title, clock, and battery are
-wired to real Hyprland/UPower data. Wi-Fi/Bluetooth/mic are also live
-now, but not via a Quickshell service module — Quickshell has no
-built-in network or Bluetooth API (confirmed against its own source:
-`src/services/` only has greetd, mpris, notifications, pam, pipewire,
-polkit, status_notifier, upower), so the bar polls `nmcli`,
-`bluetoothctl`, and `wpctl` on a 5s timer instead, the same way
-waybar-style bars typically do this.
+Everything backend-side is wired to real data: Hyprland IPC (workspaces,
+window title), UPower (battery), Pipewire (volume, media via MPRIS),
+`nmcli`/`bluetoothctl`/`brightnessctl` (Wi-Fi, Bluetooth, brightness —
+Quickshell has no native service for any of these, confirmed against its
+own source), and real PAM auth for the lock screen.
 
-Still cosmetic-only placeholders, pending real vector icons:
+What's still placeholder-only:
 
-- **Bluetooth** shows as a plain "bt" text label, dim when off.
-- **Mic** shows as "mic muted" text, only when actually muted.
-- **Power button** is a plain `⏻` Unicode character, not the mockup's
-  stroke-SVG icon.
+- **Icons** — bluetooth/mic/power/lock/sleep/restart/shutdown all render
+  as plain text labels (`"bt"`, `"lock"`, `⏻`, etc.), not the mockup's
+  stroke-SVG icons. This is the biggest remaining visual gap vs. the
+  mockup.
+- **DND ("Focus" toggle)** in the control center is UI-only — flipping
+  it doesn't actually suppress notifications yet (would need a shared
+  singleton between ControlCenter.qml and Notifications.qml).
+- **Control center and the bar each poll Wi-Fi/Bluetooth status
+  independently** (duplicated, not shared state) — harmless but a bit
+  wasteful; a candidate for a future shared-service refactor.
 
-None of this should block testing the bar/launcher layout, blur, and
-type — flag it in your screenshot feedback and I'll fill these in next.
+None of this should block testing the actual functionality — layout,
+blur, type, and whether the toggles/sliders/lock/notifications really
+work. Flag anything broken in your screenshot feedback.
 
 ## Troubleshooting
 

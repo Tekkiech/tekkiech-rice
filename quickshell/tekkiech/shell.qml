@@ -10,4 +10,8 @@ import Quickshell
 ShellRoot {
     Bar {}
     Launcher {}
+    ControlCenter {}
+    Notifications {}
+    OSD {}
+    LockScreen {}
 }

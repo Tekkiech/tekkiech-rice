@@ -36,6 +36,7 @@ sudo pacman -S --needed --noconfirm \
     pipewire pipewire-pulse pipewire-audio wireplumber \
     networkmanager \
     bluez bluez-utils \
+    brightnessctl \
     xdg-desktop-portal xdg-desktop-portal-hyprland \
     git base-devel
 
