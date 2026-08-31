@@ -25,9 +25,12 @@ PanelWindow {
 
     Theme { id: theme }
 
-    property var results: []
+    property string query: ""
 
-    function refresh(query) {
+    // A binding (not a one-shot function call) so this re-evaluates
+    // whenever DesktopEntries finishes loading, not just at whatever
+    // moment Component.onCompleted happened to fire.
+    property var results: {
         const all = [...DesktopEntries.applications.values];
         const q = query.toLowerCase();
         const filtered = q === ""
@@ -35,7 +38,7 @@ PanelWindow {
             : all.filter(d =>
                 d.name.toLowerCase().includes(q)
                 || (d.comment ?? "").toLowerCase().includes(q));
-        results = filtered
+        return filtered
             .slice()
             .sort((a, b) => a.name.localeCompare(b.name))
             .slice(0, 8);
@@ -44,7 +47,7 @@ PanelWindow {
     function open() {
         visible = true;
         searchField.text = "";
-        refresh("");
+        query = "";
         searchField.forceActiveFocus();
     }
 
@@ -119,7 +122,7 @@ PanelWindow {
                         font: searchField.font
                     }
 
-                    onTextChanged: launcher.refresh(text)
+                    onTextChanged: launcher.query = text
                     Keys.onEscapePressed: launcher.close()
                     Keys.onReturnPressed: {
                         if (results.length > 0) {
