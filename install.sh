@@ -37,6 +37,7 @@ sudo pacman -S --needed --noconfirm \
     networkmanager \
     bluez bluez-utils \
     brightnessctl \
+    libnotify \
     xdg-desktop-portal xdg-desktop-portal-hyprland \
     git base-devel
 
