@@ -99,16 +99,20 @@ blur, and fonts are landing the way the mockup intended.
 ## What's stubbed (for now)
 
 The bar's workspace list, active window title, clock, and battery are
-wired to real Hyprland/UPower data. Three things in the mockup **aren't**
-live yet, because I couldn't verify their exact Quickshell service API
-without a running instance to test against:
+wired to real Hyprland/UPower data. Wi-Fi/Bluetooth/mic are also live
+now, but not via a Quickshell service module — Quickshell has no
+built-in network or Bluetooth API (confirmed against its own source:
+`src/services/` only has greetd, mpris, notifications, pam, pipewire,
+polkit, status_notifier, upower), so the bar polls `nmcli`,
+`bluetoothctl`, and `wpctl` on a 5s timer instead, the same way
+waybar-style bars typically do this.
 
-- **Wi-Fi / Bluetooth / mic status** — not in the bar at all yet (the
-  mockup shows them; this pass doesn't). Adding them needs either
-  confirming Quickshell's network/bluetooth service module or falling
-  back to shelling out to `nmcli`/`bluetoothctl`.
-- **Power button glyph** — using a plain `⏻` Unicode character, not the
-  mockup's stroke-SVG icon, as a placeholder.
+Still cosmetic-only placeholders, pending real vector icons:
+
+- **Bluetooth** shows as a plain "bt" text label, dim when off.
+- **Mic** shows as "mic muted" text, only when actually muted.
+- **Power button** is a plain `⏻` Unicode character, not the mockup's
+  stroke-SVG icon.
 
 None of this should block testing the bar/launcher layout, blur, and
 type — flag it in your screenshot feedback and I'll fill these in next.

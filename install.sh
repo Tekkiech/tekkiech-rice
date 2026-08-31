@@ -33,6 +33,9 @@ sudo pacman -S --needed --noconfirm \
     noto-fonts \
     polkit \
     upower \
+    pipewire pipewire-pulse pipewire-audio wireplumber \
+    networkmanager \
+    bluez bluez-utils \
     xdg-desktop-portal xdg-desktop-portal-hyprland \
     git base-devel
 
@@ -63,8 +66,10 @@ echo "==> Linking quickshell config"
 mkdir -p "$HOME/.config/quickshell"
 ln -sfn "$REPO_DIR/quickshell/tekkiech" "$HOME/.config/quickshell/tekkiech"
 
-echo "==> Enabling upower (battery reporting)"
+echo "==> Enabling upower (battery), NetworkManager (wifi), bluetooth"
 sudo systemctl enable --now upower
+sudo systemctl enable --now NetworkManager
+sudo systemctl enable --now bluetooth
 
 echo "==> Enabling seatd and adding you to the seat + video groups"
 sudo systemctl enable --now seatd

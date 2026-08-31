@@ -1,15 +1,18 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Services.UPower
 import "common"
 
 // Full-width top bar. Flat, no rounding, matches Main.dc.html in /mockup.
 // Workspaces and the active window title come live from Hyprland's IPC;
-// battery comes from UPower. Network/Bluetooth/mic are left as static
-// placeholders for now (see README "What's stubbed") until their exact
-// Quickshell service APIs are confirmed against a running instance.
+// battery comes from UPower. Wi-Fi/Bluetooth/mic have no dedicated
+// Quickshell service module (confirmed against quickshell-mirror's own
+// src/services/ listing — only greetd/mpris/notifications/pam/pipewire/
+// polkit/status_notifier/upower exist), so they poll nmcli/bluetoothctl/
+// wpctl on a timer instead, same approach real bars (waybar etc.) use.
 PanelWindow {
     id: bar
 
@@ -24,6 +27,49 @@ PanelWindow {
     focusable: false
 
     Theme { id: theme }
+
+    property string wifiSsid: ""
+    property bool bluetoothOn: false
+    property bool micMuted: false
+
+    Timer {
+        interval: 5000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            wifiProc.running = false; wifiProc.running = true;
+            btProc.running = false; btProc.running = true;
+            micProc.running = false; micProc.running = true;
+        }
+    }
+
+    Process {
+        id: wifiProc
+        command: ["nmcli", "-t", "-f", "active,ssid", "dev", "wifi"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const active = text.split("\n").find(l => l.startsWith("yes:"));
+                bar.wifiSsid = active ? active.slice(4) : "";
+            }
+        }
+    }
+
+    Process {
+        id: btProc
+        command: ["bluetoothctl", "show"]
+        stdout: StdioCollector {
+            onStreamFinished: bar.bluetoothOn = /Powered:\s*yes/.test(text)
+        }
+    }
+
+    Process {
+        id: micProc
+        command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SOURCE@"]
+        stdout: StdioCollector {
+            onStreamFinished: bar.micMuted = text.includes("[MUTED]")
+        }
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -114,6 +160,29 @@ PanelWindow {
             anchors.rightMargin: 16
             anchors.verticalCenter: parent.verticalCenter
             spacing: 14
+
+            Text {
+                visible: bar.micMuted
+                text: "mic muted"
+                font.family: theme.fontMono
+                font.pixelSize: 11
+                color: theme.textFaint
+            }
+
+            Text {
+                visible: bar.wifiSsid !== ""
+                text: bar.wifiSsid
+                font.family: theme.fontMono
+                font.pixelSize: 12
+                color: theme.textDim
+            }
+
+            Text {
+                text: "bt"
+                font.family: theme.fontMono
+                font.pixelSize: 11
+                color: bar.bluetoothOn ? theme.textDim : theme.textFaint
+            }
 
             Text {
                 readonly property var device: UPower.displayDevice
