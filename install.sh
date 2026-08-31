@@ -32,6 +32,7 @@ sudo pacman -S --needed --noconfirm \
     ttf-ibm-plex \
     noto-fonts \
     polkit \
+    upower \
     xdg-desktop-portal xdg-desktop-portal-hyprland \
     git base-devel
 
@@ -61,6 +62,14 @@ ln -sf "$REPO_DIR/hypr/hyprland.conf" "$HOME/.config/hypr/hyprland.conf"
 echo "==> Linking quickshell config"
 mkdir -p "$HOME/.config/quickshell"
 ln -sfn "$REPO_DIR/quickshell/tekkiech" "$HOME/.config/quickshell/tekkiech"
+
+echo "==> Enabling upower (battery reporting)"
+sudo systemctl enable --now upower
+
+echo "==> Enabling seatd and adding you to the seat + video groups"
+sudo systemctl enable --now seatd
+sudo usermod -aG seat,video "$USER"
+echo "    (log out and back in, or open a fresh session, for the group change to apply)"
 
 echo
 echo "Done. See README.md for how to start Hyprland and what to check first."
