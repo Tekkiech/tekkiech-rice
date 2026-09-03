@@ -121,20 +121,30 @@ Everything backend-side is wired to real data: Hyprland IPC (workspaces,
 window title), UPower (battery), Pipewire (volume, media via MPRIS),
 `nmcli`/`bluetoothctl`/`brightnessctl` (Wi-Fi, Bluetooth, brightness —
 Quickshell has no native service for any of these, confirmed against its
-own source), and real PAM auth for the lock screen.
+own source), and real PAM auth for the lock screen. Every icon
+(bluetooth, mic, power, lock, sleep, restart, wifi, volume, brightness,
+media controls, lock screen submit) is a real scalable vector — drawn
+from the same path data as the mockup's SVGs — not a text label or
+static image, so it recolors like the mockup did. DND actually
+suppresses notification toasts now (verified: toggled it on via a
+temporary debug hook, confirmed a real `notify-send` produced no toast,
+toggled off, confirmed it did — that debug hook was removed before this
+was pushed, it's not in the shipped code).
 
-What's still placeholder-only:
+Remaining known gaps:
 
-- **Icons** — bluetooth/mic/power/lock/sleep/restart/shutdown all render
-  as plain text labels (`"bt"`, `"lock"`, `⏻`, etc.), not the mockup's
-  stroke-SVG icons. This is the biggest remaining visual gap vs. the
-  mockup.
-- **DND ("Focus" toggle)** in the control center is UI-only — flipping
-  it doesn't actually suppress notifications yet (would need a shared
-  singleton between ControlCenter.qml and Notifications.qml).
+- **The DND toggle's click path itself is untested from my end** — I
+  verified the on/off *logic* end-to-end (see above), but I don't have
+  keyboard/mouse input simulation set up on this VM over plain SSH, so I
+  never actually clicked the Focus tile. Worth a real click-test.
 - **Control center and the bar each poll Wi-Fi/Bluetooth status
   independently** (duplicated, not shared state) — harmless but a bit
   wasteful; a candidate for a future shared-service refactor.
+- **The volume-reactive OSD is unverified** — this VM has zero audio
+  hardware (`wpctl status` shows no sinks/sources at all), so the
+  Pipewire-driven auto-show on volume change was never actually
+  triggered. The brightness path (IPC-driven, not hardware-dependent)
+  works.
 
 None of this should block testing the actual functionality — layout,
 blur, type, and whether the toggles/sliders/lock/notifications really
