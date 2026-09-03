@@ -161,12 +161,11 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 14
 
-            Text {
+            Icon {
                 visible: bar.micMuted
-                text: "mic muted"
-                font.family: theme.fontMono
-                font.pixelSize: 11
-                color: theme.textFaint
+                name: "mic-off"
+                size: 15
+                color: theme.textDim
             }
 
             Text {
@@ -177,19 +176,56 @@ PanelWindow {
                 color: theme.textDim
             }
 
-            Text {
-                text: "bt"
-                font.family: theme.fontMono
-                font.pixelSize: 11
+            Icon {
+                name: "wifi"
+                size: 15
+                visible: bar.wifiSsid !== ""
+                color: theme.textDim
+            }
+
+            Icon {
+                name: "bluetooth"
+                size: 15
                 color: bar.bluetoothOn ? theme.textDim : theme.textFaint
             }
 
-            Text {
-                readonly property var device: UPower.displayDevice
-                text: device && device.ready ? Math.round(device.percentage) + "%" : "--"
-                font.family: theme.fontMono
-                font.pixelSize: 12
-                color: theme.textDim
+            RowLayout {
+                spacing: 6
+                Rectangle {
+                    Layout.preferredWidth: 17
+                    Layout.preferredHeight: 10
+                    radius: 2
+                    color: "transparent"
+                    border.width: 1
+                    border.color: theme.textDim
+
+                    Rectangle {
+                        anchors.right: parent.right
+                        anchors.rightMargin: -3
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 2
+                        height: 4
+                        color: theme.textDim
+                    }
+
+                    Rectangle {
+                        readonly property var device: UPower.displayDevice
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.margins: 1.5
+                        width: Math.max(1, (parent.width - 3) * ((device && device.ready ? device.percentage : 100) / 100))
+                        color: theme.textDim
+                    }
+                }
+
+                Text {
+                    readonly property var device: UPower.displayDevice
+                    text: device && device.ready ? Math.round(device.percentage) + "%" : "--"
+                    font.family: theme.fontMono
+                    font.pixelSize: 12
+                    color: theme.textDim
+                }
             }
 
             Rectangle {
@@ -198,9 +234,9 @@ PanelWindow {
                 color: theme.borderStrong
             }
 
-            Text {
-                text: "⏻" // power glyph placeholder — swap for the mockup's stroke-icon SVG later
-                font.pixelSize: 14
+            Icon {
+                name: "power"
+                size: 15
                 color: theme.textDim
 
                 MouseArea {

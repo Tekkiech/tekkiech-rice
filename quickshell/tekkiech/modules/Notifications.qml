@@ -24,12 +24,18 @@ PanelWindow {
     Theme { id: theme }
 
     property var toasts: []
+    // Bound from shell.qml's shared root property (set by ControlCenter's
+    // Focus toggle). Muted notifications are still tracked/dismissable via
+    // the server, they just don't get a toast popup.
+    property bool suppressed: false
 
     NotificationServer {
         id: server
 
         onNotification: notification => {
             notification.tracked = true;
+            if (root.suppressed) return;
+
             const entry = { n: notification, id: notification.id };
             root.toasts = [entry, ...root.toasts].slice(0, 5);
 

@@ -113,7 +113,7 @@ Item {
                             id: passwordField
                             anchors.fill: parent
                             anchors.leftMargin: 18
-                            anchors.rightMargin: 18
+                            anchors.rightMargin: 44
                             verticalAlignment: TextInput.AlignVCenter
                             color: theme.text
                             font.family: theme.fontSans
@@ -132,6 +132,29 @@ Item {
                                     if (passwordField.text !== lockContext.currentText)
                                         passwordField.text = lockContext.currentText;
                                 }
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 32
+                            height: 32
+                            radius: 16
+                            color: theme.white
+
+                            Icon {
+                                anchors.centerIn: parent
+                                name: "arrow-right"
+                                size: 14
+                                color: "#151515"
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: lockContext.tryUnlock()
                             }
                         }
                     }

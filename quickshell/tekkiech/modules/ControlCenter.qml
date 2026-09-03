@@ -32,9 +32,11 @@ PanelWindow {
 
     property bool wifiOn: false
     property bool bluetoothOn: false
-    property bool dndOn: false
+    property bool dndOn: false // bound from shell.qml's shared root property
     property bool airplaneOn: false
     property real brightness: 50
+
+    signal dndToggleRequested()
 
     function open() { panel.visible = true; refresh(); }
     function close() { panel.visible = false; }
@@ -174,6 +176,7 @@ PanelWindow {
                 component ToggleTile: Rectangle {
                     property bool on: false
                     property string label: ""
+                    property string icon: ""
                     signal activated()
 
                     Layout.fillWidth: true
@@ -183,12 +186,24 @@ PanelWindow {
                     border.width: on ? 0 : 1
                     border.color: theme.border
 
-                    Text {
+                    Column {
                         anchors.centerIn: parent
-                        text: label
-                        font.family: theme.fontMono
-                        font.pixelSize: 10
-                        color: on ? "#151515" : theme.textDim
+                        spacing: 6
+
+                        Icon {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            name: icon
+                            size: 16
+                            color: on ? "#151515" : theme.textDim
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: label
+                            font.family: theme.fontMono
+                            font.pixelSize: 10
+                            color: on ? "#151515" : theme.textDim
+                        }
                     }
 
                     MouseArea {
@@ -198,10 +213,10 @@ PanelWindow {
                     }
                 }
 
-                ToggleTile { label: "Wi-Fi"; on: panel.wifiOn; onActivated: panel.setWifi(!panel.wifiOn) }
-                ToggleTile { label: "Bluetooth"; on: panel.bluetoothOn; onActivated: panel.setBluetooth(!panel.bluetoothOn) }
-                ToggleTile { label: "Focus"; on: panel.dndOn; onActivated: panel.dndOn = !panel.dndOn }
-                ToggleTile { label: "Airplane"; on: panel.airplaneOn; onActivated: panel.setAirplane(!panel.airplaneOn) }
+                ToggleTile { label: "Wi-Fi"; icon: "wifi"; on: panel.wifiOn; onActivated: panel.setWifi(!panel.wifiOn) }
+                ToggleTile { label: "Bluetooth"; icon: "bluetooth"; on: panel.bluetoothOn; onActivated: panel.setBluetooth(!panel.bluetoothOn) }
+                ToggleTile { label: "Focus"; icon: "moon"; on: panel.dndOn; onActivated: panel.dndToggleRequested() }
+                ToggleTile { label: "Airplane"; icon: "airplane"; on: panel.airplaneOn; onActivated: panel.setAirplane(!panel.airplaneOn) }
             }
 
             ColumnLayout {
@@ -209,18 +224,17 @@ PanelWindow {
                 spacing: 14
 
                 component SliderRow: RowLayout {
-                    property string label: ""
+                    property string icon: ""
                     property real value: 0
                     signal moved(real pct)
 
                     spacing: 12
 
-                    Text {
-                        text: label
-                        font.family: theme.fontMono
-                        font.pixelSize: 11
+                    Icon {
+                        name: icon
+                        size: 15
                         color: theme.textDim
-                        Layout.preferredWidth: 30
+                        Layout.preferredWidth: 16
                     }
 
                     Rectangle {
@@ -259,14 +273,14 @@ PanelWindow {
 
                 SliderRow {
                     Layout.fillWidth: true
-                    label: "vol"
+                    icon: "volume"
                     value: (Pipewire.defaultAudioSink?.audio?.volume ?? 0) * 100
                     onMoved: pct => { if (Pipewire.defaultAudioSink?.audio) Pipewire.defaultAudioSink.audio.volume = pct / 100; }
                 }
 
                 SliderRow {
                     Layout.fillWidth: true
-                    label: "bri"
+                    icon: "brightness-rays"
                     value: panel.brightness
                     onMoved: pct => panel.setBrightness(pct)
                 }
@@ -308,11 +322,25 @@ PanelWindow {
                         }
                     }
 
-                    Text {
-                        text: panel.player?.isPlaying ? "pause" : "play"
-                        font.family: theme.fontMono
-                        font.pixelSize: 11
-                        color: theme.textDim
+                    Item {
+                        Layout.preferredWidth: 16
+                        Layout.preferredHeight: 16
+
+                        Icon {
+                            visible: !panel.player?.isPlaying
+                            anchors.fill: parent
+                            name: "play"
+                            color: theme.textDim
+                        }
+
+                        Row {
+                            visible: panel.player?.isPlaying ?? false
+                            anchors.centerIn: parent
+                            spacing: 3
+                            Rectangle { width: 4; height: 14; color: theme.textDim }
+                            Rectangle { width: 4; height: 14; color: theme.textDim }
+                        }
+
                         MouseArea {
                             anchors.fill: parent
                             anchors.margins: -8
@@ -328,7 +356,7 @@ PanelWindow {
                 Layout.topMargin: 4
 
                 component PowerButton: Rectangle {
-                    property string label: ""
+                    property string icon: ""
                     signal activated()
                     Layout.preferredWidth: 42
                     Layout.preferredHeight: 42
@@ -337,11 +365,10 @@ PanelWindow {
                     border.width: 1
                     border.color: theme.borderStrong
 
-                    Text {
+                    Icon {
                         anchors.centerIn: parent
-                        text: label
-                        font.family: theme.fontMono
-                        font.pixelSize: 9
+                        name: icon
+                        size: 16
                         color: theme.textDim
                     }
 
@@ -352,13 +379,13 @@ PanelWindow {
                     }
                 }
 
-                PowerButton { label: "lock"; onActivated: Quickshell.execDetached(["qs", "-c", "tekkiech", "ipc", "call", "lock", "activate"]) }
+                PowerButton { icon: "lock"; onActivated: Quickshell.execDetached(["qs", "-c", "tekkiech", "ipc", "call", "lock", "activate"]) }
                 Item { Layout.fillWidth: true }
-                PowerButton { label: "sleep"; onActivated: Quickshell.execDetached(["systemctl", "suspend"]) }
+                PowerButton { icon: "moon"; onActivated: Quickshell.execDetached(["systemctl", "suspend"]) }
                 Item { Layout.fillWidth: true }
-                PowerButton { label: "restart"; onActivated: Quickshell.execDetached(["systemctl", "reboot"]) }
+                PowerButton { icon: "restart"; onActivated: Quickshell.execDetached(["systemctl", "reboot"]) }
                 Item { Layout.fillWidth: true }
-                PowerButton { label: "off"; onActivated: Quickshell.execDetached(["systemctl", "poweroff"]) }
+                PowerButton { icon: "power"; onActivated: Quickshell.execDetached(["systemctl", "poweroff"]) }
             }
         }
     }

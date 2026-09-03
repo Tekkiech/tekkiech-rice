@@ -71,12 +71,11 @@ PanelWindow {
             anchors.rightMargin: 18
             spacing: 12
 
-            Text {
+            Icon {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.isBrightness ? "bri" : "vol"
-                font.family: theme.fontMono
-                font.pixelSize: 12
-                color: theme.textDim
+                name: root.isBrightness ? "brightness-rays" : "volume"
+                size: 16
+                color: theme.text
             }
 
             Rectangle {
