@@ -5,6 +5,7 @@
 set $mod Mod4
 set $term foot
 set $menu rofi -show drun -theme ~/.config/rofi/theme.rasi
+set $lock swaylock -f -c 000000 --font "Rubik" --indicator-radius 60 --indicator-thickness 4 --inside-color 18181a --ring-color 3a3a3c --text-color f7f7f8 --key-hl-color ffffff --separator-color 000000 --inside-clear-color 18181a --ring-clear-color f7f7f8
 
 # --- Palette (pitch-black, matches /mockup) ---
 set $bg       #000000
@@ -16,7 +17,7 @@ set $textdim  #b3b3b8
 set $textfnt  #7a7a80
 set $white    #ffffff
 
-font pango:IBM Plex Mono 10
+font pango:Rubik 10
 
 # --- Output / wallpaper ---
 output * bg $bg solid_color
@@ -51,9 +52,9 @@ smart_gaps on
 # out on the -c argument uselessly)
 exec dunst -config ~/.config/dunst/dunstrc
 exec swayidle -w \
-    timeout 300 'swaylock -f -c 000000' \
+    timeout 300 '$lock' \
     timeout 600 'swaymsg "output * dpms off"' resume 'swaymsg "output * dpms on"' \
-    before-sleep 'swaylock -f -c 000000'
+    before-sleep '$lock'
 exec ~/.config/sway/scripts/wob-daemon.sh
 exec nm-applet --indicator
 exec blueman-applet
@@ -65,7 +66,7 @@ bindsym $mod+Shift+q exit
 bindsym $mod+d exec $menu
 bindsym $mod+v floating toggle
 bindsym $mod+f fullscreen
-bindsym $mod+l exec swaylock -f -c 000000 --font "IBM Plex Mono" --indicator-radius 60 --indicator-thickness 4 --inside-color 18181a --ring-color 3a3a3c --text-color f7f7f8 --key-hl-color ffffff --separator-color 000000 --inside-clear-color 18181a --ring-clear-color f7f7f8
+bindsym $mod+l exec $lock
 bindsym $mod+shift+p exec ~/.config/sway/scripts/powermenu.sh
 
 bindsym $mod+1 workspace number 1
@@ -108,7 +109,7 @@ bar {
     position top
     height 40
     status_command ~/.config/sway/scripts/status.sh
-    font pango:IBM Plex Mono 10
+    font pango:Rubik 10
 
     colors {
         background $surface
