@@ -25,8 +25,13 @@ block() { # name, full_text, color
 # not just that one block.
 
 window_title() {
+    # `select(.focused == true)` alone also matches the focused empty
+    # workspace container when no window is open (its .name is just the
+    # workspace number, e.g. "1") — found live: the bar showed a bare "1"
+    # with nothing running. Requiring .pid restricts this to an actual
+    # window, since workspace/output/split containers don't have one.
     timeout 2 swaymsg -t get_tree 2>/dev/null | \
-        timeout 2 jq -r '.. | objects | select(.focused == true) | .name // empty' 2>/dev/null | \
+        timeout 2 jq -r '.. | objects | select(.focused == true and .pid != null) | .name // empty' 2>/dev/null | \
         head -1 | cut -c1-60
 }
 
@@ -43,7 +48,13 @@ wifi_ssid() {
 }
 
 volume_pct() {
-    timeout 2 wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -oP '\d+(?=\.\d+)' | head -1
+    # wpctl reports a 0.00-1.00+ fraction ("Volume: 1.00" = 100%), not a
+    # percentage — found live: this used to grab just the digit before
+    # the decimal point, so 100% showed as "1%". Needs the full fraction
+    # times 100, not a substring of it.
+    local raw
+    raw="$(timeout 2 wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -oP '(?<=Volume: )[\d.]+')"
+    [ -n "$raw" ] && awk -v v="$raw" 'BEGIN { printf "%d", v * 100 }'
 }
 
 battery_pct() {
