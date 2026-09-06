@@ -38,12 +38,14 @@ sway/
     lid-close.sh                           lid switch handler — lock unless docked (clamshell mode)
     powerprofile.sh                          power-profiles-daemon wrapper, AC/battery-aware (SUPER+SHIFT+E)
     battery-watch.sh                           background loop, notifies once per discharge below 15%
+    apple-wifi-resume-fix.sh                     Apple Silicon Wi-Fi wedge recovery (installed by install-apple-silicon.sh)
 rofi/
   config.rasi                default rofi config (modi, icon theme)
   theme.rasi                  the actual look — matches Launcher.dc.html in /mockup
 dunst/dunstrc               notification daemon config — matches Notifications.dc.html
 wob/wob.ini                 volume/brightness OSD popup — matches OSD.dc.html
 install.sh                  package install + config symlinks + service enables
+install-apple-silicon.sh    Asahi Linux specific fixes — sourced by install.sh, no-op elsewhere
 mockup/                     the original design canvas (.dc.html source)
 ```
 
@@ -225,8 +227,65 @@ binary release rather than just being an "any-arch" package) both ship
 
 **Not tested on real ARM hardware** — everything above is verified by
 checking package/release metadata, not by actually running this on an
-aarch64 machine. If you try it on one (Raspberry Pi, an ARM laptop,
-Asahi on Apple Silicon), that's the real test.
+aarch64 machine. If you try it on one, that's the real test.
+
+### Apple Silicon (Asahi Linux)
+
+If you're installing on a real Mac via [Asahi Alarm](https://asahi-alarm.org/)
+(this repo was written with an M1 Pro MacBook Pro 14" in mind
+specifically), `install-apple-silicon.sh` — sourced automatically by
+`install.sh`, not a separate step — applies four fixes for real,
+well-documented Apple Silicon quirks, each gated on actual hardware
+detection so it's a genuine no-op on x86 or generic ARM:
+
+- **Speaker safety.** Apple Silicon speakers are kept muted **at the
+  kernel level** without the full stack (`asahi-audio` +
+  `speakersafetyd` + `rtkit`, on top of the `pipewire-pulse` this repo
+  already installs) — this isn't a preference, it's hardware
+  protection the kernel enforces on purpose. Assumes the
+  asahi-alarm.org base image's own pacman repo carries
+  `asahi-audio`/`speakersafetyd` (they're not in mainline Arch or
+  generic Arch Linux ARM) — true for the base this was written
+  against, not independently re-verified.
+- **Display notch.** Asahi crops the display below the notch by
+  default; without `appledrm show_notch=1`, this rice's top-anchored
+  bar would render partly or entirely in the cropped-away strip.
+- **Keyboard/trackpad boot race.** The internal keyboard/trackpad can
+  come up dead for the whole session on unlucky boots (a device-churn
+  race between `hid-generic` and `hid_apple`/`hid_magicmouse`) —
+  early-loading those drivers from the initramfs fixes it.
+- **Wi-Fi resume wedge** (BCM4378/BCM4387 only, gated on the actual PCI
+  ID rather than just "is Apple Silicon" — M2 Max/Ultra's BCM4388
+  doesn't have this bug) — the firmware can wedge across sleep, which
+  NetworkManager surfaces as a wrongly-rejected Wi-Fi password on
+  resume; a systemd service detects and recovers from it.
+
+All four are adapted from [Omarchy Mac](https://github.com/omarchy-mac/omarchy-mac)'s
+`install/hardware/apple/*.sh` (real, shipped fixes, not guessed at) —
+reimplemented against this repo's own package set rather than pulling
+in Omarchy's whole 350+-script `bin/` utility suite, which is a much
+bigger project than a rice this size needs. The Wi-Fi resume fix's
+wedge-detection logic (journal-cursor-based, clock-skew-safe across
+suspend) is adapted fairly closely rather than rewritten simpler and
+possibly wrong — same reasoning as the lock screen's PAM wiring
+earlier in this repo's history.
+
+**None of the four have run on real hardware yet** — this VM is
+x86_64, so every detection gate in `install-apple-silicon.sh`
+correctly evaluates false on it (verified: sourcing it here prints
+"Not Apple Silicon, skipping" and exits cleanly, so the no-op path at
+least doesn't break the x86 install). The actual fixes need the real
+M1 Pro to confirm — the display-notch and speaker-safety ones especially,
+since without them the machine would be visibly and audibly broken in
+an obvious way.
+
+Two things worth knowing about the target base image itself, from
+Omarchy Mac's own install notes (not this repo's problem to fix, but
+worth having read before you hit them): the minimal Asahi Alarm image
+ships without `git` or `sudo` at all (`pacman -S --needed sudo git` as
+root, before anything else), and a handful of unrelated packages (e.g.
+`obs-studio`, `dotnet-runtime`) have no aarch64 build — none of which
+this rice's own package list touches.
 
 ## What's stubbed / verified
 
