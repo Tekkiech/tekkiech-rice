@@ -77,12 +77,22 @@ element selected.normal {
     text-color: @text;
 }
 
+/* `element`'s background being transparent doesn't inherit down to
+   these child widgets — rofi's built-in default theme gives
+   element-text its own opaque white background, found live: rows had
+   the right shape/radius but every one was a solid white pill
+   regardless of the (correctly-applied, confirmed via -dump-theme)
+   `element normal.normal` rule. Both need their own explicit
+   background-color: transparent. */
 element-icon {
+    background-color: transparent;
     size: 20px;
     padding: 0 12px 0 0;
 }
 
 element-text {
+    background-color: transparent;
+    text-color: inherit;
     font: "Rubik 11";
     vertical-align: 0.5;
 }
