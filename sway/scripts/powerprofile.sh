@@ -34,11 +34,15 @@ power_source() {
 }
 
 available_profiles() {
-    # Top-level profile lines look like "  performance:" (indented) or
-    # "* balanced:" (the active one, marked with * instead of indent) —
-    # found via man powerprofilesctl before writing this, not guessed;
-    # a plain `^\s*` would silently skip whichever profile is active.
-    powerprofilesctl list 2>/dev/null | grep -oP '^[*[:space:]]+\K[\w-]+(?=:)' || true
+    # Top-level profile lines are exactly "* name:" or "  name:" (one
+    # marker/two spaces, nothing more); nested detail fields like
+    # "    PlatformDriver:" are indented further. Found live: the
+    # original pattern here matched ANY amount of leading whitespace,
+    # so it also picked up "PlatformDriver" as if it were a profile
+    # name, and `cycle` tried to powerprofilesctl set it. Anchoring to
+    # exactly 2 leading chars excludes the deeper-indented detail lines
+    # without needing to know their field names.
+    powerprofilesctl list 2>/dev/null | grep -oP '^(\* |  )\K[\w-]+(?=:)' || true
 }
 
 profile_available() {
