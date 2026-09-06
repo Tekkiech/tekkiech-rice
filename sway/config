@@ -58,6 +58,7 @@ exec swayidle -w \
 exec ~/.config/sway/scripts/wob-daemon.sh
 exec nm-applet --indicator
 exec blueman-applet
+exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec ~/.config/sway/scripts/powerprofile.sh autodetect
 exec ~/.config/sway/scripts/battery-watch.sh
 
