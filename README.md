@@ -227,30 +227,43 @@ wlroots based Wayland compositors"), natively Wayland everywhere, no
 X11/XWayland fallback to worry about. See "What changed" above for
 what this cost in re-theming.
 
-Beyond that one real finding, the rest of the package list installed
-cleanly on the ARM VM. What's still just verified by metadata rather
-than an actual install:
+Beyond that one real finding, the rest of the package list — including
+building `yay-bin` from its real `aarch64` GitHub release and building
+`ttf-rubik-vf` through it — installed and ran cleanly on the ARM VM
+(this particular VM's base image had no `sudo`/`git` either, same
+gotcha Omarchy Mac's notes flag for Asahi Alarm — see below). One
+thing still only verified by metadata rather than an actual install:
+GPU driver needs vary by ARM board (Panfrost/Lima for Mali GPUs,
+V3D/VC4 for Raspberry Pi, Apple Silicon's own driver stack under Asahi)
+but all route through the same `mesa` package already in `install.sh`
+— no board-specific package swap needed, though which *kernel* and
+firmware you're running is on you, same as the GPU-acceleration check
+earlier in this README. The ARM VM used `virtio-gpu`, not real ARM GPU
+hardware.
 
-- `ttf-rubik-vf` is a font-only AUR package (`any` arch), works
-  identically everywhere — not re-tested after the fuzzel switch, but
-  nothing about it is architecture-dependent.
-- `yay-bin`'s upstream (`Jguer/yay`) publishes `aarch64` and `armv7h`
-  release tarballs alongside `x86_64` — confirmed on its GitHub
-  releases, not exercised on the ARM VM (it already had a working
-  `sudo`/`git`, no AUR helper needed to get that far).
-- GPU driver needs vary by ARM board (Panfrost/Lima for Mali GPUs,
-  V3D/VC4 for Raspberry Pi, Apple Silicon's own driver stack under
-  Asahi) but all route through the same `mesa` package already in
-  `install.sh` — no board-specific package swap needed, though which
-  *kernel* and firmware you're running is on you, same as the
-  GPU-acceleration check earlier in this README. The ARM VM used
-  `virtio-gpu` (software rendering, same as the x86_64 VM), not real
-  ARM GPU hardware.
-
-**Sway itself has not yet been started on the ARM VM** — the package
-list installs cleanly as of this fix, but nobody has run `sway` there
-yet to confirm the bar/launcher/etc. actually render correctly on
-aarch64. That's the next real test.
+**Sway itself would not start on the ARM VM** — worth understanding
+exactly why, because it's specific to this VM's setup, not to ARM or
+this rice: `sway -d`'s debug log showed the real cause was
+`Atomic commit failed: Permission denied` on the DRM connector — not a
+missing EDID/mode issue as the identical-looking error first suggested
+(a genuine, separate bug was fixed along the way: `sway/config` had no
+explicit output mode at all, which a real display would have needed
+too — see git history). Permission denied on an atomic commit means
+something else already holds DRM master. `loginctl seat-status`
+confirmed a Parallels console window open directly on the VM was the
+active seat0 session; closing it freed the session, but Sway still
+couldn't get master afterwards, meaning the real holder was the
+kernel's own boot-time framebuffer console (fbcon), which a normal
+login flow (a display manager, or `login` on a real TTY) hands off
+automatically and which launching `sway` over a bare SSH connection —
+this repo's whole testing method all session — never triggers a
+handoff for. This is specific to bypassing normal login over SSH on
+this particular VM, not a defect in the rice: **the real M1 Pro target
+will log in through an actual console**, where this simply doesn't
+come up. Confirmed the package list installs correctly; confirmed
+*why* the graphical session doesn't start under this specific test
+method; didn't chase a Parallels/SSH-specific console-handoff quirk
+further given the real target's console setup is entirely different.
 
 ### Apple Silicon (Asahi Linux)
 
