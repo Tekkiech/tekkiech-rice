@@ -185,6 +185,19 @@ Not fully verified:
 - **Rofi's power-menu placeholder text** — reads "Search apps, files,
   commands…" even in the power menu, since the placeholder is fixed in
   `theme.rasi` rather than driven by `-p`. Cosmetic only.
+- **Faint text color fringing on the bar, under screenshot/software
+  rendering.** This is a known, long-standing upstream Sway/Cairo bug,
+  not something fixable via `fontconfig` (tried — confirmed
+  `rgba: none` is correctly applied at the font-matching level, doesn't
+  help): Cairo's font rendering breaks specifically when the
+  compositing operator is `SOURCE`, which is what swaybar uses for its
+  layer-shell surface. See
+  [swaywm/sway#5605](https://github.com/swaywm/sway/issues/5605),
+  [#3163](https://github.com/swaywm/sway/issues/3163),
+  [#8421](https://github.com/swaywm/sway/issues/8421). `waybar` (GTK-
+  based) doesn't hit this specific bug, but that's a heavier dependency
+  — the same tradeoff already made by choosing swaybar over waybar in
+  the first place. Decided to accept this rather than add GTK back in.
 
 ## Troubleshooting
 
