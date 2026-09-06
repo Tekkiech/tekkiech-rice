@@ -46,7 +46,9 @@ smart_gaps on
 # Flat panels + a border is the tradeoff for staying on vanilla, lighter sway.
 
 # --- Autostart ---
-exec swaybg -c $bg
+# (no separate `exec swaybg` line — `output * bg $bg solid_color` above
+# already spawns swaybg itself; a second manual one here just errored
+# out on the -c argument uselessly)
 exec dunst -config ~/.config/dunst/dunstrc
 exec swayidle -w \
     timeout 300 'swaylock -f -c 000000' \

@@ -18,26 +18,32 @@ block() { # name, full_text, color
         "$1" "$(echo -n "$2" | sed 's/"/\\"/g')" "$3"
 }
 
+# Every external call here is timeout-guarded: this loop is sequential,
+# so any one of these hanging (bluetoothctl does, on a machine with no
+# adapter at all — bluetooth.service just sits there with nothing to
+# answer it — found live on the test VM) would freeze the entire bar,
+# not just that one block.
+
 window_title() {
-    swaymsg -t get_tree 2>/dev/null | \
-        jq -r '.. | objects | select(.focused == true) | .name // empty' 2>/dev/null | \
+    timeout 2 swaymsg -t get_tree 2>/dev/null | \
+        timeout 2 jq -r '.. | objects | select(.focused == true) | .name // empty' 2>/dev/null | \
         head -1 | cut -c1-60
 }
 
 mic_muted() {
-    wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null | grep -q MUTED && echo 1 || echo 0
+    timeout 2 wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null | grep -q MUTED && echo 1 || echo 0
 }
 
 bluetooth_on() {
-    bluetoothctl show 2>/dev/null | grep -q "Powered: yes" && echo 1 || echo 0
+    timeout 2 bluetoothctl show 2>/dev/null | grep -q "Powered: yes" && echo 1 || echo 0
 }
 
 wifi_ssid() {
-    nmcli -t -f active,ssid dev wifi 2>/dev/null | awk -F: '$1=="yes"{print $2; exit}'
+    timeout 2 nmcli -t -f active,ssid dev wifi 2>/dev/null | awk -F: '$1=="yes"{print $2; exit}'
 }
 
 volume_pct() {
-    wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -oP '\d+(?=\.\d+)' | head -1
+    timeout 2 wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | grep -oP '\d+(?=\.\d+)' | head -1
 }
 
 battery_pct() {
