@@ -5,7 +5,7 @@
 set $mod Mod4
 set $term foot
 set $menu rofi -show drun -theme ~/.config/rofi/theme.rasi
-set $lock swaylock -f -c 000000 --font "Rubik" --indicator-radius 60 --indicator-thickness 4 --inside-color 18181a --ring-color 3a3a3c --text-color f7f7f8 --key-hl-color ffffff --separator-color 000000 --inside-clear-color 18181a --ring-clear-color f7f7f8
+set $lock ~/.config/sway/scripts/lock.sh
 
 # --- Palette (pitch-black, matches /mockup) ---
 set $bg       #000000
@@ -58,6 +58,8 @@ exec swayidle -w \
 exec ~/.config/sway/scripts/wob-daemon.sh
 exec nm-applet --indicator
 exec blueman-applet
+exec ~/.config/sway/scripts/powerprofile.sh autodetect
+exec ~/.config/sway/scripts/battery-watch.sh
 
 # --- Keybindings ---
 bindsym $mod+Return exec $term
@@ -68,6 +70,13 @@ bindsym $mod+v floating toggle
 bindsym $mod+f fullscreen
 bindsym $mod+l exec $lock
 bindsym $mod+shift+p exec ~/.config/sway/scripts/powermenu.sh
+
+# Laptop lid: lock (unless docked to an external monitor — clamshell
+# mode) on close, and always reconcile the internal panel's power state.
+# --locked on lid:off so opening the lid wakes the display even while
+# already locked (otherwise you'd open the lid to a black screen).
+bindswitch lid:on exec ~/.config/sway/scripts/lid-close.sh
+bindswitch --locked lid:off exec ~/.config/sway/scripts/lid-close.sh
 
 bindsym $mod+1 workspace number 1
 bindsym $mod+2 workspace number 2
@@ -99,6 +108,12 @@ bindsym XF86AudioLowerVolume  exec ~/.config/sway/scripts/volume.sh down
 bindsym XF86AudioMute         exec ~/.config/sway/scripts/volume.sh mute
 bindsym XF86MonBrightnessUp   exec ~/.config/sway/scripts/brightness.sh up
 bindsym XF86MonBrightnessDown exec ~/.config/sway/scripts/brightness.sh down
+bindsym XF86KbdBrightnessUp   exec ~/.config/sway/scripts/kbd-backlight.sh up
+bindsym XF86KbdBrightnessDown exec ~/.config/sway/scripts/kbd-backlight.sh down
+
+# Cycles power-saver -> balanced -> performance (whichever are actually
+# available) and remembers the choice separately for AC/battery.
+bindsym $mod+Shift+e exec ~/.config/sway/scripts/powerprofile.sh cycle
 
 bindsym Print exec grim -g "$(slurp)" - | wl-copy
 bindsym $mod+Print exec grim - | wl-copy

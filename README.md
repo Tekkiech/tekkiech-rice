@@ -6,7 +6,7 @@ tools rather than a custom Qt/QML shell. Design direction was pulled from
 [Caelestia](https://github.com/caelestia-dots/caelestia),
 [Noctalia](https://github.com/noctalia-dev/noctalia-shell),
 [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland), and
-[Omarchy](https://github.com/basecamp/omarchy). The mockup this is built
+[Omarchy](https://github.com/omacom/omarchy). The mockup this is built
 from lives in [`/mockup`](./mockup) (also published as a
 [Claude Design canvas](https://claude.ai/code/artifact/e3961e70-2dd7-49f1-9abf-06de383559f4)).
 
@@ -31,8 +31,13 @@ sway/
     status.sh                 swaybar status_command — i3bar JSON protocol, plain poll loop
     volume.sh                  wpctl wrapper, reports to wob's pipe
     brightness.sh                brightnessctl wrapper, reports to wob's pipe
-    wob-daemon.sh                 sets up wob's input pipe
-    powermenu.sh                   rofi-driven lock/sleep/restart/shutdown menu (SUPER+SHIFT+P)
+    kbd-backlight.sh               keyboard backlight, no-ops if there isn't one
+    wob-daemon.sh                    sets up wob's input pipe
+    lock.sh                            the one themed swaylock invocation, shared by everything below
+    powermenu.sh                         rofi-driven lock/sleep/restart/shutdown menu (SUPER+SHIFT+P)
+    lid-close.sh                           lid switch handler — lock unless docked (clamshell mode)
+    powerprofile.sh                          power-profiles-daemon wrapper, AC/battery-aware (SUPER+SHIFT+E)
+    battery-watch.sh                           background loop, notifies once per discharge below 15%
 rofi/
   config.rasi                default rofi config (modi, icon theme)
   theme.rasi                  the actual look — matches Launcher.dc.html in /mockup
@@ -135,7 +140,13 @@ sway
 - `SUPER+d` — app launcher (rofi)
 - `SUPER+SHIFT+p` — power menu (lock/sleep/restart/shutdown)
 - `SUPER+l` — lock immediately
-- volume/brightness media keys — adjust + show the OSD popup
+- `SUPER+SHIFT+e` — cycle power profile (power-saver/balanced/performance)
+- volume/brightness/keyboard-backlight media keys — adjust + show the
+  OSD popup (keyboard backlight silently does nothing if your laptop
+  doesn't have one)
+- closing the lid — locks, unless there's an external monitor connected
+  (clamshell mode), in which case it just turns off the internal panel
+  and keeps running on the external display
 - `SUPER+SHIFT+q` — exit Sway back to the TTY
 
 ### Taking a screenshot
@@ -143,6 +154,79 @@ sway
 ```bash
 grim screenshot.png
 ```
+
+## Laptop support
+
+Four things adapted from how [Omarchy](https://github.com/omacom/omarchy)
+handles laptops (a much bigger project — 350+ utility scripts in its
+`bin/` — these four patterns are what's actually relevant to a rice
+this size, reimplemented rather than copied wholesale, in the "no
+daemon for one fact" style the rest of this repo already uses):
+
+- **Lid close / clamshell mode** (`sway/scripts/lid-close.sh`, bound
+  via `bindswitch lid:on/off` in `sway/config`) — closing the lid locks
+  the screen, *unless* an external monitor is connected, in which case
+  it's clamshell mode: just turn off the internal panel and keep
+  running externally, don't lock or suspend. Reads
+  `/proc/acpi/button/lid/*/state` directly and `swaymsg -t get_outputs`
+  for the external-monitor check — no extra daemon.
+- **Power profiles** (`sway/scripts/powerprofile.sh`, `SUPER+SHIFT+e`
+  to cycle, needs `power-profiles-daemon` which `install.sh` now
+  installs and enables) — remembers your last-picked profile
+  separately for AC and battery power, so plugging in restores
+  whichever one you chose for AC rather than always resetting to a
+  default. AC/battery state comes from `/sys/class/power_supply`
+  directly (Omarchy's version uses a UPower D-Bus property for the
+  same fact — same information, lighter path to it). Shows on the bar.
+- **Battery-low notification** (`sway/scripts/battery-watch.sh`, a
+  background loop from `sway/config`) — one notification when the
+  battery drops below 15% while discharging, not one every poll cycle
+  once you're under the line; resets when you plug in or charge back
+  past it.
+- **Keyboard backlight** (`sway/scripts/kbd-backlight.sh`, bound to the
+  `XF86KbdBrightness{Up,Down}` keys) — separate from screen brightness.
+  Looks for a `brightnessctl`-visible LED device matching
+  `*kbd_backlight*` and quietly does nothing if your laptop doesn't
+  have one, rather than erroring.
+
+**None of this is tested beyond `bash -n` and a live config-load
+check** — this VM has no lid switch, no battery, no `power-profiles-daemon`-
+compatible hardware, and no keyboard backlight. The logic is reviewed
+by eye and grounded in Omarchy's real (running, shipped) implementation
+of the same ideas, but it needs an actual laptop to confirm. If you
+test on one, the lid-close branch (locks vs. clamshell) is the one
+most worth watching closely.
+
+## ARM support
+
+Nothing in this repo is architecture-specific — no hardcoded
+`x86_64` anywhere, every package installs via plain `pacman`/`yay`
+using Arch's normal architecture resolution, and confirmed the one AUR
+package (`ttf-rubik-vf`, and `yay-bin` itself, which needs a real
+binary release rather than just being an "any-arch" package) both ship
+`aarch64` builds:
+
+- `ttf-rubik-vf` is a font-only AUR package (`any` arch), works
+  identically everywhere.
+- `yay-bin`'s upstream (`Jguer/yay`) publishes `aarch64` and `armv7h`
+  release tarballs alongside `x86_64` — confirmed on its GitHub
+  releases before relying on it, not assumed.
+- Everything else in `install.sh` is a mainstream package (`sway`,
+  `foot`, `rofi-wayland`, `dunst`, the `pipewire`/`wireplumber` stack,
+  etc.) that Arch Linux ARM mirrors from the same upstream sources
+  Arch itself uses — no proprietary blobs or x86-only software in this
+  stack.
+- GPU driver needs vary by ARM board (Panfrost/Lima for Mali GPUs,
+  V3D/VC4 for Raspberry Pi, Apple Silicon's own driver stack under
+  Asahi) but all route through the same `mesa` package already in
+  `install.sh` — no board-specific package swap needed, though which
+  *kernel* and firmware you're running is on you, same as the
+  GPU-acceleration check earlier in this README.
+
+**Not tested on real ARM hardware** — everything above is verified by
+checking package/release metadata, not by actually running this on an
+aarch64 machine. If you try it on one (Raspberry Pi, an ARM laptop,
+Asahi on Apple Silicon), that's the real test.
 
 ## What's stubbed / verified
 

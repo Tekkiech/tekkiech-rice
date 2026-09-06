@@ -5,9 +5,11 @@
 #
 # Workspaces are drawn by swaybar itself; this only produces the
 # right-aligned block row (window title, mic, bluetooth, wifi, volume,
-# battery, clock) — i3bar's protocol has no "center" and no way to put
-# blocks between the workspace buttons and here, that's the tradeoff for
-# not running waybar.
+# power profile, battery, clock) — i3bar's protocol has no "center" and
+# no way to put blocks between the workspace buttons and here, that's
+# the tradeoff for not running waybar.
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 TEXT="#f7f7f8"
 DIM="#b3b3b8"
@@ -57,6 +59,10 @@ volume_pct() {
     [ -n "$raw" ] && awk -v v="$raw" 'BEGIN { printf "%d", v * 100 }'
 }
 
+power_profile() {
+    timeout 2 "$DIR/powerprofile.sh" current 2>/dev/null
+}
+
 battery_pct() {
     for bat in /sys/class/power_supply/BAT*; do
         [ -d "$bat" ] && cat "$bat/capacity" 2>/dev/null && return
@@ -82,6 +88,9 @@ while true; do
 
     vol="$(volume_pct)"
     [ -n "$vol" ] && blocks+=("$(block vol "vol ${vol}%" "$DIM")")
+
+    profile="$(power_profile)"
+    [ -n "$profile" ] && blocks+=("$(block powerprofile "$profile" "$FAINT")")
 
     bat="$(battery_pct)"
     [ -n "$bat" ] && blocks+=("$(block battery "${bat}%" "$DIM")")

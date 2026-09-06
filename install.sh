@@ -19,6 +19,10 @@ fi
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+echo "==> Detected architecture: $(uname -m)"
+echo "    (everything below is plain pacman/AUR — no x86-specific package"
+echo "    names or paths in this repo, see README.md's ARM section)"
+
 echo "==> Updating package databases"
 sudo pacman -Sy
 
@@ -32,6 +36,7 @@ sudo pacman -S --needed --noconfirm \
     wob \
     grim slurp wl-clipboard \
     brightnessctl \
+    power-profiles-daemon \
     jq \
     seatd \
     pipewire pipewire-pulse pipewire-audio wireplumber \
@@ -75,10 +80,11 @@ for script in "$REPO_DIR"/sway/scripts/*.sh; do
 done
 
 # --- Services --------------------------------------------------------------
-echo "==> Enabling seatd, NetworkManager, bluetooth"
+echo "==> Enabling seatd, NetworkManager, bluetooth, power-profiles-daemon"
 sudo systemctl enable --now seatd
 sudo systemctl enable --now NetworkManager
 sudo systemctl enable --now bluetooth
+sudo systemctl enable --now power-profiles-daemon
 sudo usermod -aG seat,video "$USER"
 echo "    (log out and back in, or open a fresh session, for the group change to apply)"
 
