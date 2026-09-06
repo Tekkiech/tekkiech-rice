@@ -5,7 +5,7 @@
 # What this does:
 #   1. pacman-installs Sway and a lightweight set of companion tools
 #   2. builds yay (AUR helper) if you don't have one, for the one AUR font
-#   3. symlinks this repo's sway/, rofi/, dunst/, wob/ into ~/.config
+#   3. symlinks this repo's sway/, fuzzel/, dunst/, wob/ into ~/.config
 #   4. enables the services Sway needs to run without a display manager
 #
 # See README.md for how to actually start Sway from a TTY.
@@ -30,7 +30,7 @@ echo "==> Installing official-repo packages"
 sudo pacman -S --needed --noconfirm \
     sway \
     foot \
-    rofi-wayland \
+    fuzzel \
     dunst \
     swaybg swaylock swayidle \
     wob \
@@ -69,7 +69,7 @@ yay -S --needed --noconfirm ttf-rubik-vf
 # --- Config symlinks -----------------------------------------------------
 mkdir -p "$HOME/.config"
 
-for dir in sway rofi dunst wob fontconfig; do
+for dir in sway fuzzel dunst wob fontconfig; do
     echo "==> Linking $dir config"
     rm -rf "$HOME/.config/$dir"
     ln -sfn "$REPO_DIR/$dir" "$HOME/.config/$dir"

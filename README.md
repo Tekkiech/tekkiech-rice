@@ -34,14 +34,12 @@ sway/
     kbd-backlight.sh               keyboard backlight, no-ops if there isn't one
     wob-daemon.sh                    sets up wob's input pipe
     lock.sh                            the one themed swaylock invocation, shared by everything below
-    powermenu.sh                         rofi-driven lock/sleep/restart/shutdown menu (SUPER+SHIFT+P)
+    powermenu.sh                         fuzzel-driven lock/sleep/restart/shutdown menu (SUPER+SHIFT+P)
     lid-close.sh                           lid switch handler — lock unless docked (clamshell mode)
     powerprofile.sh                          power-profiles-daemon wrapper, AC/battery-aware (SUPER+SHIFT+E)
     battery-watch.sh                           background loop, notifies once per discharge below 15%
     apple-wifi-resume-fix.sh                     Apple Silicon Wi-Fi wedge recovery (installed by install-apple-silicon.sh)
-rofi/
-  config.rasi                default rofi config (modi, icon theme)
-  theme.rasi                  the actual look — matches Launcher.dc.html in /mockup
+fuzzel/fuzzel.ini           launcher + power-menu look — matches Launcher.dc.html in /mockup
 dunst/dunstrc               notification daemon config — matches Notifications.dc.html
 wob/wob.ini                 volume/brightness OSD popup — matches OSD.dc.html
 install.sh                  package install + config symlinks + service enables
@@ -68,13 +66,18 @@ footprint and no custom QML to maintain:
   and heavier; this is the tradeoff for staying this light.
 - **Control center → gone**, replaced by two things: swaybar's native
   systray (showing real applets — `nm-applet`, `blueman-applet` — not
-  custom-built toggles) for Wi-Fi/Bluetooth, and a rofi-driven power menu
-  (`scripts/powermenu.sh`, `SUPER+SHIFT+P`) for lock/sleep/restart/
+  custom-built toggles) for Wi-Fi/Bluetooth, and a fuzzel-driven power
+  menu (`scripts/powermenu.sh`, `SUPER+SHIFT+P`) for lock/sleep/restart/
   shutdown. No volume/brightness sliders in a panel — those are
   keybind + OSD only now (see below).
-- **Launcher**: `rofi-wayland` instead of a custom QML overlay. Themed in
-  `rofi/theme.rasi` to match the mockup's launcher panel as closely as
-  rofi's theming language allows.
+- **Launcher**: [`fuzzel`](https://codeberg.org/dnkl/fuzzel) instead of
+  a custom QML overlay. This was `rofi-wayland` originally, themed in
+  `rofi/theme.rasi` — switched after testing on a real Arch Linux ARM
+  VM found `rofi-wayland` doesn't exist there at all (see "ARM support"
+  below for the full story). fuzzel is natively Wayland everywhere,
+  uses the same `fcft` font-rendering library as `foot`, and has no GTK
+  dependency — arguably a better fit for this repo's "lighter" goal
+  than rofi was even on x86.
 - **Notifications**: `dunst` instead of a custom `NotificationServer`
   QML component. Dunst has had proper Wayland/layer-shell support for a
   while.
@@ -89,7 +92,7 @@ footprint and no custom QML to maintain:
   `decoration.blur` doesn't exist in vanilla Sway — that's a
   `swayfx` (a Sway fork) feature. Went with vanilla Sway for staying
   lighter and not depending on a fork; panels are solid near-black
-  instead of frosted glass. rofi/dunst/wob still round their *own*
+  instead of frosted glass. fuzzel/dunst/wob still round their *own*
   corners via their individual configs, so panels/toasts/the OSD keep
   some roundness — it's specifically window/bar blur that's gone. If you
   want that back later, swapping in `swayfx` is a drop-in compositor
@@ -109,7 +112,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-Installs Sway and the tools listed above, symlinks `sway/`, `rofi/`,
+Installs Sway and the tools listed above, symlinks `sway/`, `fuzzel/`,
 `dunst/`, `wob/` into `~/.config`, and enables `seatd`/`NetworkManager`/
 `bluetooth`. Read it before running it — it's short and every step is
 commented.
@@ -139,7 +142,7 @@ sway
 ```
 
 - `SUPER+Return` — open `foot`
-- `SUPER+d` — app launcher (rofi)
+- `SUPER+d` — app launcher (fuzzel)
 - `SUPER+SHIFT+p` — power menu (lock/sleep/restart/shutdown)
 - `SUPER+l` — lock immediately
 - `SUPER+SHIFT+e` — cycle power profile (power-saver/balanced/performance)
@@ -201,33 +204,53 @@ most worth watching closely.
 
 ## ARM support
 
-Nothing in this repo is architecture-specific — no hardcoded
-`x86_64` anywhere, every package installs via plain `pacman`/`yay`
-using Arch's normal architecture resolution, and confirmed the one AUR
-package (`ttf-rubik-vf`, and `yay-bin` itself, which needs a real
-binary release rather than just being an "any-arch" package) both ship
-`aarch64` builds:
+**Live-tested on a real Arch Linux ARM VM** (not just package/release
+metadata — see the git history around the rofi→fuzzel switch for the
+actual test). First run of `install.sh` there failed immediately:
+
+```
+error: target not found: rofi-wayland
+```
+
+`rofi-wayland` doesn't exist on Arch Linux ARM at all. ARM's `extra`
+repo only has plain `rofi` 1.7.5 — and checking upstream, rofi's own
+Wayland support was only merged into mainline as of its **2.0.0**
+release, so 1.7.5 predates it entirely and is X11-only. Since `pacman
+-S` validates every target before installing anything, this one
+missing package aborted the *entire* install before a single other
+package went in — not a partial failure, a total one.
+
+Fixed by switching the launcher from `rofi-wayland` to
+[`fuzzel`](https://codeberg.org/dnkl/fuzzel) — confirmed available on
+both `x86_64` and `aarch64` (`extra/fuzzel`, "Application launcher for
+wlroots based Wayland compositors"), natively Wayland everywhere, no
+X11/XWayland fallback to worry about. See "What changed" above for
+what this cost in re-theming.
+
+Beyond that one real finding, the rest of the package list installed
+cleanly on the ARM VM. What's still just verified by metadata rather
+than an actual install:
 
 - `ttf-rubik-vf` is a font-only AUR package (`any` arch), works
-  identically everywhere.
+  identically everywhere — not re-tested after the fuzzel switch, but
+  nothing about it is architecture-dependent.
 - `yay-bin`'s upstream (`Jguer/yay`) publishes `aarch64` and `armv7h`
   release tarballs alongside `x86_64` — confirmed on its GitHub
-  releases before relying on it, not assumed.
-- Everything else in `install.sh` is a mainstream package (`sway`,
-  `foot`, `rofi-wayland`, `dunst`, the `pipewire`/`wireplumber` stack,
-  etc.) that Arch Linux ARM mirrors from the same upstream sources
-  Arch itself uses — no proprietary blobs or x86-only software in this
-  stack.
+  releases, not exercised on the ARM VM (it already had a working
+  `sudo`/`git`, no AUR helper needed to get that far).
 - GPU driver needs vary by ARM board (Panfrost/Lima for Mali GPUs,
   V3D/VC4 for Raspberry Pi, Apple Silicon's own driver stack under
   Asahi) but all route through the same `mesa` package already in
   `install.sh` — no board-specific package swap needed, though which
   *kernel* and firmware you're running is on you, same as the
-  GPU-acceleration check earlier in this README.
+  GPU-acceleration check earlier in this README. The ARM VM used
+  `virtio-gpu` (software rendering, same as the x86_64 VM), not real
+  ARM GPU hardware.
 
-**Not tested on real ARM hardware** — everything above is verified by
-checking package/release metadata, not by actually running this on an
-aarch64 machine. If you try it on one, that's the real test.
+**Sway itself has not yet been started on the ARM VM** — the package
+list installs cleanly as of this fix, but nobody has run `sway` there
+yet to confirm the bar/launcher/etc. actually render correctly on
+aarch64. That's the next real test.
 
 ### Apple Silicon (Asahi Linux)
 
@@ -294,11 +317,19 @@ Verified working live on the test VM, screenshots taken:
 - **Bar** — workspace pill, live window title (jq-filtered to actual
   windows only, not empty workspace containers), volume %, clock/date,
   systray with real `nm-applet`/`blueman-applet` icons.
-- **Launcher** (rofi) — real app list from `.desktop` entries, icons,
-  correct dark theme including the selected-row highlight.
+- **Launcher** (rofi, before the ARM-driven switch to fuzzel — see "ARM
+  support") — real app list from `.desktop` entries, icons, correct
+  dark theme including the selected-row highlight.
 - **Notifications** (dunst) — a real `notify-send` rendered correctly.
-- **Power menu** (rofi) — Lock/Sleep/Restart/Shutdown/Cancel, correctly
-  themed.
+- **Power menu** (rofi, same caveat) — Lock/Sleep/Restart/Shutdown/
+  Cancel, correctly themed.
+
+**fuzzel itself — the launcher and power menu's actual look —
+has not been visually re-verified since the switch from rofi.** The
+config (`fuzzel/fuzzel.ini`) is written against fuzzel's real,
+confirmed `.ini` format and CLI flags (`-d`/`--dmenu`, `-p`/`--prompt`),
+not guessed, but nobody has taken a screenshot of it yet the way rofi's
+was. That's the next thing to check, before the ARM Sway session even.
 
 Not fully verified:
 
@@ -325,9 +356,6 @@ Not fully verified:
   build: no audio hardware on this VM at all, so `volume.sh`/
   `brightness.sh` were checked for syntax and logic but the keybind →
   `wob` popup flow was never actually triggered.
-- **Rofi's power-menu placeholder text** — reads "Search apps, files,
-  commands…" even in the power menu, since the placeholder is fixed in
-  `theme.rasi` rather than driven by `-p`. Cosmetic only.
 - **Faint text color fringing on the bar, under screenshot/software
   rendering.** This is a known, long-standing upstream Sway/Cairo bug,
   not something fixable via `fontconfig` (tried — confirmed
@@ -356,9 +384,11 @@ Not fully verified:
 - **Text renders in a generic fallback font** — Rubik is AUR-only
   (`ttf-rubik-vf`); if `install.sh`'s yay step failed or was skipped,
   everything still works, it just won't match the mockup's type exactly.
-- **`rofi` looks unthemed / plain** — check `~/.config/rofi` resolves to
-  this repo's `rofi/` (`ls -la ~/.config/rofi`), and that the keybind is
-  actually passing `-theme ~/.config/rofi/theme.rasi` (see `sway/config`).
+- **`fuzzel` looks unthemed / plain** — check `~/.config/fuzzel`
+  resolves to this repo's `fuzzel/` (`ls -la ~/.config/fuzzel`); unlike
+  rofi, fuzzel reads its config from that default path automatically,
+  no `-theme`-equivalent flag needed in `sway/config`/`powermenu.sh`,
+  so a missing/wrong symlink there is the only likely cause.
 - **wob never shows anything** — its input pipe is created by
   `scripts/wob-daemon.sh`, started via `exec` in `sway/config`. Check
   it's actually running (`pgrep -f wob-daemon`) and that
