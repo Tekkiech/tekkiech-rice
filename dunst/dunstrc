@@ -1,0 +1,55 @@
+# tekkiech-rice — dunst config, matches /mockup's Notifications.dc.html
+# Installed to ~/.config/dunst/dunstrc
+
+[global]
+    monitor = 0
+    follow = mouse
+
+    origin = top-right
+    offset = 20x26
+    width = 300
+    notification_limit = 5
+
+    progress_bar = true
+    progress_bar_height = 5
+    progress_bar_frame_width = 0
+    progress_bar_min_width = 260
+    progress_bar_max_width = 260
+
+    frame_width = 1
+    frame_color = "#3a3a3c"
+    gap_size = 12
+    corner_radius = 16
+
+    font = Rubik 10
+    line_height = 2
+    padding = 14
+    horizontal_padding = 14
+    text_icon_padding = 12
+
+    format = "<b>%s</b>\n%b"
+    show_age_threshold = 60
+    ellipsize = end
+    icon_position = left
+    max_icon_size = 36
+
+    sort = yes
+    idle_threshold = 120
+    ignore_newline = no
+    stack_duplicates = true
+
+[urgency_low]
+    background = "#18181aee"
+    foreground = "#b3b3b8"
+    timeout = 6
+
+[urgency_normal]
+    background = "#18181aee"
+    foreground = "#f7f7f8"
+    timeout = 6
+
+[urgency_critical]
+    background = "#18181aee"
+    foreground = "#f7f7f8"
+    frame_color = "#e5a1a1"
+    timeout = 0

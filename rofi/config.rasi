@@ -1,0 +1,13 @@
+// tekkiech-rice — default rofi config (~/.config/rofi/config.rasi)
+// Explicit -theme flags in sway/config and scripts/powermenu.sh already
+// point at theme.rasi directly; this just makes bare `rofi` invocations
+// (outside those keybinds) match too.
+
+configuration {
+    modi: "drun,run";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    display-drun: "Apps";
+}
+
+@theme "theme.rasi"

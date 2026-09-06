@@ -3,12 +3,12 @@
 # Run as your normal user (not root); it uses sudo where needed.
 #
 # What this does:
-#   1. pacman-installs Hyprland, Quickshell, a terminal, and fonts
+#   1. pacman-installs Sway and a lightweight set of companion tools
 #   2. builds yay (AUR helper) if you don't have one, for the one AUR font
-#   3. symlinks this repo's hypr/ and quickshell/tekkiech/ into ~/.config
+#   3. symlinks this repo's sway/, rofi/, dunst/, wob/ into ~/.config
+#   4. enables the services Sway needs to run without a display manager
 #
-# It does NOT set up a display manager — see README.md for how to start
-# Hyprland from a TTY, which is enough for testing.
+# See README.md for how to actually start Sway from a TTY.
 
 set -euo pipefail
 
@@ -24,28 +24,32 @@ sudo pacman -Sy
 
 echo "==> Installing official-repo packages"
 sudo pacman -S --needed --noconfirm \
-    hyprland \
-    quickshell \
-    qt6-base qt6-declarative qt6-svg qt6-wayland \
+    sway \
     foot \
-    grim \
+    rofi-wayland \
+    dunst \
+    swaybg swaylock swayidle \
+    wob \
+    grim slurp wl-clipboard \
+    brightnessctl \
+    jq \
+    seatd \
+    pipewire pipewire-pulse pipewire-audio wireplumber \
+    networkmanager network-manager-applet \
+    bluez bluez-utils blueman \
+    polkit polkit-gnome \
+    xdg-desktop-portal xdg-desktop-portal-wlr \
     ttf-ibm-plex \
     noto-fonts \
-    polkit \
-    upower \
-    pipewire pipewire-pulse pipewire-audio wireplumber \
-    networkmanager \
-    bluez bluez-utils \
-    brightnessctl \
+    papirus-icon-theme \
     libnotify \
-    xdg-desktop-portal xdg-desktop-portal-hyprland \
     git base-devel
 
 # --- AUR: yay + ttf-rubik-vf -------------------------------------------
 # Rubik (the UI font) isn't in the official repos, only AUR. Skip this
-# section if you'd rather manage fonts yourself — the shell falls back to
-# the system sans font if Rubik isn't installed, it just won't match the
-# mockup exactly.
+# section if you'd rather manage fonts yourself — everything falls back
+# to the system sans font if Rubik isn't installed, it just won't match
+# the mockup exactly.
 if ! command -v yay >/dev/null 2>&1; then
     echo "==> yay not found, building it"
     tmp_yay="$(mktemp -d)"
@@ -60,23 +64,23 @@ yay -S --needed --noconfirm ttf-rubik-vf
 # --- Config symlinks -----------------------------------------------------
 mkdir -p "$HOME/.config"
 
-echo "==> Linking hypr config"
-mkdir -p "$HOME/.config/hypr"
-ln -sf "$REPO_DIR/hypr/hyprland.conf" "$HOME/.config/hypr/hyprland.conf"
+for dir in sway rofi dunst wob; do
+    echo "==> Linking $dir config"
+    rm -rf "$HOME/.config/$dir"
+    ln -sfn "$REPO_DIR/$dir" "$HOME/.config/$dir"
+done
 
-echo "==> Linking quickshell config"
-mkdir -p "$HOME/.config/quickshell"
-ln -sfn "$REPO_DIR/quickshell/tekkiech" "$HOME/.config/quickshell/tekkiech"
+for script in "$REPO_DIR"/sway/scripts/*.sh; do
+    chmod +x "$script"
+done
 
-echo "==> Enabling upower (battery), NetworkManager (wifi), bluetooth"
-sudo systemctl enable --now upower
+# --- Services --------------------------------------------------------------
+echo "==> Enabling seatd, NetworkManager, bluetooth"
+sudo systemctl enable --now seatd
 sudo systemctl enable --now NetworkManager
 sudo systemctl enable --now bluetooth
-
-echo "==> Enabling seatd and adding you to the seat + video groups"
-sudo systemctl enable --now seatd
 sudo usermod -aG seat,video "$USER"
 echo "    (log out and back in, or open a fresh session, for the group change to apply)"
 
 echo
-echo "Done. See README.md for how to start Hyprland and what to check first."
+echo "Done. See README.md for how to start Sway and what to check first."
