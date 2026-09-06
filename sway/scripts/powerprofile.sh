@@ -62,7 +62,8 @@ case "${1:-}" in
         next="${profiles[0]}"
         for i in "${!profiles[@]}"; do
             if [ "${profiles[$i]}" = "$current" ]; then
-                next="${profiles[$((( (i + 1) % ${#profiles[@]} ))]}"
+                next_i=$(( (i + 1) % ${#profiles[@]} ))
+                next="${profiles[$next_i]}"
                 break
             fi
         done
