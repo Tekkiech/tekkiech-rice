@@ -20,6 +20,16 @@ set $white    #ffffff
 font pango:Rubik 10
 
 # --- Output / wallpaper ---
+# Scoped to "Virtual-1" specifically, not "*" — a blanket wildcard here
+# would force even a real laptop's native display to 1920x1080,
+# clobbering its actual resolution. virtio-gpu's Linux driver names its
+# output "Virtual-1" regardless of hypervisor (confirmed on both a QEMU
+# and a Parallels VM this rice was tested on), and virtio-gpu commonly
+# ships with no EDID at all — wlroots then has zero advertised modes to
+# pick from and Sway fails outright with "no wl_output" until a mode is
+# forced with --custom. A no-op on any real display, which is never
+# named "Virtual-1".
+output Virtual-1 mode --custom 1920x1080@60Hz
 output * bg $bg solid_color
 
 # --- Input ---
