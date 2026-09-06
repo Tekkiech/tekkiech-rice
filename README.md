@@ -12,11 +12,15 @@ from lives in [`/mockup`](./mockup) (also published as a
 
 ## Status
 
-**Rebuilt on Sway.** This repo originally targeted Hyprland + Quickshell
-(still in git history — see `git log` — if you want to compare). Swapped
-for a lighter stack: no Qt/QML runtime, just Sway's own bar plus a
-handful of small, standard, single-purpose tools. Not yet tested on a
-VM — that's next.
+**Rebuilt on Sway, live-tested on the VM.** This repo originally
+targeted Hyprland + Quickshell (still in git history — see `git log` —
+if you want to compare). Swapped for a lighter stack: no Qt/QML
+runtime, just Sway's own bar plus a handful of small, standard,
+single-purpose tools. Bar, launcher, notifications, and the power menu
+are all confirmed working; the lock screen is confirmed to *activate*
+correctly (real `swaylock` process, no errors) but its actual look
+couldn't be screenshotted — `swaylock` blocks screencopy while active,
+which is a real security property, not a bug (see "What's stubbed").
 
 ## What's here
 
@@ -139,6 +143,48 @@ sway
 ```bash
 grim screenshot.png
 ```
+
+## What's stubbed / verified
+
+Verified working live on the test VM, screenshots taken:
+
+- **Bar** — workspace pill, live window title (jq-filtered to actual
+  windows only, not empty workspace containers), volume %, clock/date,
+  systray with real `nm-applet`/`blueman-applet` icons.
+- **Launcher** (rofi) — real app list from `.desktop` entries, icons,
+  correct dark theme including the selected-row highlight.
+- **Notifications** (dunst) — a real `notify-send` rendered correctly.
+- **Power menu** (rofi) — Lock/Sleep/Restart/Shutdown/Cancel, correctly
+  themed.
+
+Not fully verified:
+
+- **Lock screen appearance** — `swaylock` starts cleanly (confirmed via
+  process list, no errors in its log) but `grim` returns a blank black
+  frame while it's active. That's `swaylock`/wlroots deliberately
+  blocking screencopy during a lock — a real security property (it
+  stops screenshot tools from being used to inspect or bypass a locked
+  screen), not something to work around. You'll need to actually look
+  at the VM console to see how it renders. Same caution as before:
+  `SUPER+l` triggers *real* PAM password auth against your actual login
+  password — try it once deliberately before relying on it, and know
+  that killing the whole `sway` process (from another TTY, or via SSH:
+  `pkill -x sway`) is the clean escape hatch if something's wrong,
+  since there's no bypass by design.
+- **Wi-Fi / Bluetooth status** — this VM has no wireless or Bluetooth
+  hardware at all (`nmcli dev wifi` and `bluetoothctl show` both come
+  back empty/off), so those bar blocks and tray icons have never had
+  anything real to display. The code path is exercised (doesn't hang,
+  doesn't error — that was the whole `timeout` fix above) but the
+  actual "shows the right SSID" / "actually toggles Bluetooth" behavior
+  needs real hardware to confirm.
+- **Volume-reactive OSD** (`wob`) — same story as the old Quickshell
+  build: no audio hardware on this VM at all, so `volume.sh`/
+  `brightness.sh` were checked for syntax and logic but the keybind →
+  `wob` popup flow was never actually triggered.
+- **Rofi's power-menu placeholder text** — reads "Search apps, files,
+  commands…" even in the power menu, since the placeholder is fixed in
+  `theme.rasi` rather than driven by `-p`. Cosmetic only.
 
 ## Troubleshooting
 

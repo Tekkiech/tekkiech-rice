@@ -64,7 +64,7 @@ yay -S --needed --noconfirm ttf-rubik-vf
 # --- Config symlinks -----------------------------------------------------
 mkdir -p "$HOME/.config"
 
-for dir in sway rofi dunst wob; do
+for dir in sway rofi dunst wob fontconfig; do
     echo "==> Linking $dir config"
     rm -rf "$HOME/.config/$dir"
     ln -sfn "$REPO_DIR/$dir" "$HOME/.config/$dir"

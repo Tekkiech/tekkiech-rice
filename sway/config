@@ -123,4 +123,8 @@ bar {
 
     tray_output *
     tray_padding 8
+    # Without this, swaybar falls back to the generic "hicolor" theme for
+    # tray icons — found live: nm-applet showed a dated blue-CRT-monitor
+    # icon instead of anything from Papirus.
+    icon_theme Papirus-Dark
 }
