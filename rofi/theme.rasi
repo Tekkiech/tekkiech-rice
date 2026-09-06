@@ -56,14 +56,23 @@ listview {
     dynamic: true;
 }
 
-element {
+/* Plain `element { }` / `element selected { }` got overridden by rofi's
+   built-in default theme's own compound-class rules (element
+   normal.normal, element selected.normal, ...), which take priority over
+   a bare selector regardless of load order — found live: every row
+   rendered with the default theme's white background/black text
+   regardless of what the bare rules said. Writing out the compound
+   selectors explicitly is the standard fix. */
+element normal.normal, element alternate.normal {
     padding: 10px;
     border-radius: 12px;
     background-color: transparent;
     text-color: @text-dim;
 }
 
-element selected {
+element selected.normal {
+    padding: 10px;
+    border-radius: 12px;
     background-color: #ffffff14;
     text-color: @text;
 }
