@@ -88,5 +88,10 @@ sudo systemctl enable --now power-profiles-daemon
 sudo usermod -aG seat,video "$USER"
 echo "    (log out and back in, or open a fresh session, for the group change to apply)"
 
+# Apple Silicon (Asahi) specific fixes — a no-op on x86 or generic ARM,
+# see install-apple-silicon.sh's own header for what it checks before
+# doing anything.
+source "$REPO_DIR/install-apple-silicon.sh"
+
 echo
 echo "Done. See README.md for how to start Sway and what to check first."
