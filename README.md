@@ -270,9 +270,10 @@ further given the real target's console setup is entirely different.
 If you're installing on a real Mac via [Asahi Alarm](https://asahi-alarm.org/)
 (this repo was written with an M1 Pro MacBook Pro 14" in mind
 specifically), `install-apple-silicon.sh` — sourced automatically by
-`install.sh`, not a separate step — applies four fixes for real,
-well-documented Apple Silicon quirks, each gated on actual hardware
-detection so it's a genuine no-op on x86 or generic ARM:
+`install.sh`, not a separate step — applies four fixes (plus a fifth,
+HiDPI scaling, described below) for real, well-documented Apple Silicon
+quirks, each gated on actual hardware detection so it's a genuine no-op
+on x86 or generic ARM:
 
 - **Speaker safety.** Apple Silicon speakers are kept muted **at the
   kernel level** without the full stack (`asahi-audio` +
@@ -285,7 +286,12 @@ detection so it's a genuine no-op on x86 or generic ARM:
   against, not independently re-verified.
 - **Display notch.** Asahi crops the display below the notch by
   default; without `appledrm show_notch=1`, this rice's top-anchored
-  bar would render partly or entirely in the cropped-away strip.
+  bar would render partly or entirely in the cropped-away strip. Caveat:
+  this direction is adapted from Omarchy Mac's implementation, not
+  independently confirmed against Asahi's driver behavior or tested —
+  check on first boot whether the bar looks clipped under the notch,
+  and remove `/etc/modprobe.d/asahi-notch.conf` + re-run `mkinitcpio -P`
+  if the fix turns out to make it worse instead of better.
 - **Keyboard/trackpad boot race.** The internal keyboard/trackpad can
   come up dead for the whole session on unlucky boots (a device-churn
   race between `hid-generic` and `hid_apple`/`hid_magicmouse`) —
@@ -296,7 +302,21 @@ detection so it's a genuine no-op on x86 or generic ARM:
   NetworkManager surfaces as a wrongly-rejected Wi-Fi password on
   resume; a systemd service detects and recovers from it.
 
-All four are adapted from [Omarchy Mac](https://github.com/omarchy-mac/omarchy-mac)'s
+A fifth fix lives in `sway/config` itself rather than
+`install-apple-silicon.sh`, since it needs no root and no hardware
+gating beyond a resolution check: **HiDPI scaling**
+(`sway/scripts/hidpi-scale.sh`, run via `exec_always`). The M1 Pro 14"
+panel is natively 3024x1964 — at Sway's default scale of 1 the entire
+rice (40px bar, Rubik 10/12, fuzzel, gaps) would render pixel-for-pixel
+tiny on it. The script auto-scales any output whose reported mode is
+>=2560px wide to 2x, matching macOS's own out-of-box default for this
+exact panel (a logical 1512x982 over the 3024x1964 native mode); it's a
+no-op on the VM's 1920x1080 output and on any external monitor under
+that width. If 2x looks too large or too small on your unit, run
+`swaymsg output <name> scale 1.5` (or similar) by hand — `swaymsg -t
+get_outputs` shows the connector name.
+
+The first four are adapted from [Omarchy Mac](https://github.com/omarchy-mac/omarchy-mac)'s
 `install/hardware/apple/*.sh` (real, shipped fixes, not guessed at) —
 reimplemented against this repo's own package set rather than pulling
 in Omarchy's whole 350+-script `bin/` utility suite, which is a much
@@ -306,14 +326,21 @@ suspend) is adapted fairly closely rather than rewritten simpler and
 possibly wrong — same reasoning as the lock screen's PAM wiring
 earlier in this repo's history.
 
-**None of the four have run on real hardware yet** — this VM is
+**None of the five have run on real hardware yet** — this VM is
 x86_64, so every detection gate in `install-apple-silicon.sh`
 correctly evaluates false on it (verified: sourcing it here prints
 "Not Apple Silicon, skipping" and exits cleanly, so the no-op path at
-least doesn't break the x86 install). The actual fixes need the real
-M1 Pro to confirm — the display-notch and speaker-safety ones especially,
-since without them the machine would be visibly and audibly broken in
-an obvious way.
+least doesn't break the x86 install). The HiDPI scale script's
+jq/awk parsing was unit-tested against mock `swaymsg -t get_outputs`
+JSON shaped like the real M1 Pro 14" panel (3024x1964) alongside a
+1920x1080 entry — correctly picks scale 2 for the former and skips the
+latter — but has never run against a real, live Sway session on either
+VM (the x86 VM's Sway install didn't survive between sessions), so the
+`swaymsg output <name> scale <n>` call itself is unverified end-to-end.
+The actual fixes need the real M1 Pro to confirm — the display-notch,
+speaker-safety, and HiDPI-scale ones especially, since without them the
+machine would be visibly/audibly broken or unusably tiny in an obvious
+way.
 
 Two things worth knowing about the target base image itself, from
 Omarchy Mac's own install notes (not this repo's problem to fix, but
