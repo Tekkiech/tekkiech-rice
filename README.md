@@ -154,6 +154,24 @@ sway
   and keeps running on the external display
 - `SUPER+SHIFT+q` — exit Sway back to the TTY
 
+### Keyboard layout
+
+`sway/config` sets `xkb_layout gb` + `xkb_variant mac` (not plain `gb`,
+which matches a UK **PC** keyboard's key positions rather than a UK Mac
+one — confirmed against a real
+[UK-Apple-keyboard-on-Linux report](https://denshi.uk/apple-gb-keyboards-linux-desktops.html),
+not guessed). That's the correct base for the M1 Pro 14"'s internal
+keyboard. Not applied, since they're keyboard/hardware-specific rather
+than universally correct: that same report also uses
+`xkb_options lv3:lalt_switch,compose:rwin` to work around a *missing*
+physical right-Option key on their specific keyboard — the M1 Pro 14"'s
+built-in keyboard has one, so it likely doesn't need that option. If
+`#`, `@`, `\`, or `€` don't type correctly via the right Option key
+after first boot, add `xkb_options lv3:lalt_switch` to the `input
+"type:keyboard"` block yourself (this trades away the right Cmd/Super
+key's use as a `$mod` trigger if you also add `compose:rwin`, so only
+add that half if you actually want a Compose key).
+
 ### Taking a screenshot
 
 ```bash

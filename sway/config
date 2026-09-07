@@ -38,7 +38,13 @@ input "type:touchpad" {
     tap enabled
 }
 input "type:keyboard" {
-    xkb_layout us
+    # gb+mac: plain "gb" matches a UK PC keyboard's key positions, not a
+    # UK Mac one (ISO layout, but Apple shifts a few keys vs the PC ISO
+    # standard) — "mac" is the variant xkeyboard-config ships for this.
+    # Confirmed against a real UK-Apple-keyboard-on-Linux report, not
+    # guessed: https://denshi.uk/apple-gb-keyboards-linux-desktops.html
+    xkb_layout gb
+    xkb_variant mac
 }
 
 # --- Look ---
